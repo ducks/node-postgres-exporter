@@ -176,7 +176,7 @@ function authMiddleware(req, res, next) {
 }
 
 // --- /metrics route ---
-app.get('/metrics', authMiddleware, async (req, res) => {
+app.get('/metrics', authMiddleware, async (_, res) => {
   try {
     await collectMetrics();
     res.set('Content-Type', register.contentType);
@@ -188,10 +188,10 @@ app.get('/metrics', authMiddleware, async (req, res) => {
 });
 
 // --- Healthcheck ---
-app.get('/healthz', (req, res) => res.send('OK'));
+app.get('/healthz', (_, res) => res.send('OK'));
 
 // --- Readiness probe
-app.get('/readyz', async (req, res) => {
+app.get('/readyz', async (_, res) => {
   try {
     const client = await pool.connect();
     await client.query('SELECT 1');
@@ -202,7 +202,7 @@ app.get('/readyz', async (req, res) => {
   }
 });
 
-app.get('/livez', (req, res) => {
+app.get('/livez', (_, res) => {
   res.status(200).send('OK');
 });
 
