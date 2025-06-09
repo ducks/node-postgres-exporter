@@ -1,0 +1,9 @@
+[
+  {
+    "name": "disc_golf_course_count_by_location",
+    "help": "Number of courses grouped by location",
+    "type": "gauge",
+    "labels": ["location"],
+    "query": "SELECT location, COUNT(*)::int FROM courses GROUP BY location"
+  }
+]

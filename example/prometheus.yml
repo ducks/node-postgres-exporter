@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'pg_exporter'
+    static_configs:
+      - targets: ['exporter:9187']
+    authorization:
+      type: Bearer
+      credentials: Defacing-Tingle-Caucus8-Refueling

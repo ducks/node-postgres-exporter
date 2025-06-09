@@ -1,0 +1,9 @@
+services:
+  pg_exporter:
+    build: .
+    container_name: pg_exporter
+    ports:
+      - "9187:9187"
+    env_file: .env
+    volumes:
+      - ./queries.json:/app/queries.json:ro
