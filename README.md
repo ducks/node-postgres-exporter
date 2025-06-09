@@ -89,6 +89,8 @@ scrape_configs:
 |--------------|--------|----------------|--------------------------------------|
 | `/metrics`   | GET    | ✅ Bearer Token | Prometheus scrape endpoint            |
 | `/healthz`   | GET    | ❌ None         | Liveness probe for health checks      |
+| `/livez`     | GET    | ❌ None         | Alias forLiveness probe for health checks      |
+| `/readyz`    | GET    | ❌ None         | Readiness probe. Returns `200 OK` if the database connection is successful. |
 
 ### Authorization
 
