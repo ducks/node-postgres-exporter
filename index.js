@@ -202,6 +202,10 @@ app.get('/readyz', async (req, res) => {
   }
 });
 
+app.get('/livez', (req, res) => {
+  res.status(200).send('OK');
+});
+
 // --- Start Server ---
 app.listen(PORT, () => {
   console.log(`🚀 Exporter listening on http://localhost:${PORT}/metrics`);
