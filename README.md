@@ -111,6 +111,19 @@ You must set the `Authorization` header:
 | `EXPORTER_API_KEY` | Bearer token for `/metrics`            |
 | `QUERIES_FILE`     | Optional custom path to `queries.json` |
 
+## TODOs/Improvement Ideas
+- [ ] Add support for `valueField` in `queries.json` to avoid guesswork
+- [ ] Optional: Reload `queries.json` periodically without restart (hot reload)
+- [ ] Optional: Support token auth via query param (e.g., `?token=...`)
+- [ ] Add `/configz` endpoint to return current query config (debugging/dev)
+- [ ] Rate-limit `/metrics` endpoint to protect against abuse or scraping loops
+- [ ] Publish prebuilt Docker image to GitHub Container Registry or Docker Hub
+- [ ] Add a test metric (like `exporter_up`) to confirm exporter is functioning
+- [ ] Add unit tests for query loading and metric registration
+- [ ] Support multiple database connections (e.g., `DB_URLS=...`)
+- [ ] Allow loading `.sql` files instead of inline queries (for large SQL)
+- [ ] Gracefully shut down and close DB pool on SIGINT/SIGTERM
+
 ## License
 
 MIT
