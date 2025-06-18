@@ -4,7 +4,7 @@ const express = require('express');
 
 const {
   pool,
-  shutdown_gracefully
+  shutdown
 } = require('./db');
 
 const {
@@ -109,5 +109,5 @@ app.listen(PORT, () => {
 });
 
 // --- Graceful Shutdown ---
-process.on('SIGINT', shutdown_gracefully);
-process.on('SIGTERM', shutdown_gracefully);
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);

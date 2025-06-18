@@ -13,7 +13,7 @@ const pool = new Pool({
   idleTimeoutMillis: 10000,
 });
 
-async function shutdown_gracefully() {
+async function shutdown() {
   console.log('Shutting down gracefully...');
 
   try {
