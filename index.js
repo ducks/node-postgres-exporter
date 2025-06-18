@@ -20,14 +20,16 @@ const {
   collectCustomMetrics
 } = require('./customMetrics');
 
+const authMiddleware = require('./auth');
+
 const app = express();
 
 const rateLimit = require('express-rate-limit');
 
+require('./health')(app, pool);
+
 // --- Config ---
 const PORT = process.env.PORT || 9187;
-const API_KEY = process.env.EXPORTER_API_KEY || null;
-
 
 // --- Rate limit config ---
 const metricsLimiter = rateLimit({
@@ -67,53 +69,38 @@ async function collectMetrics() {
   }
 }
 
-function authMiddleware(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const expected = `Bearer ${API_KEY}`;
-
-  if (!authHeader || authHeader !== expected) {
-    return res.status(403).send('Forbidden');
-  }
-
-  next();
-}
-
 // --- /metrics route ---
 app.get('/metrics', authMiddleware, metricsLimiter, async (_, res) => {
   const start = Date.now();
 
+  let scrapeFailed = false;
+
   try {
     await collectMetrics();
-
   } catch (err) {
     console.error('[ERROR] Failed to collect metrics:', err);
     exporterErrors.inc();
-    res.status(500).send('# Exporter error\n');
+    scrapeFailed = true;
   } finally {
     scrapeDuration.set((Date.now() - start) / 1000);
   }
 
-  res.set('Content-Type', register.contentType);
-  res.end(await register.metrics());
-});
-
-// --- Healthcheck ---
-app.get('/healthz', (_, res) => res.send('OK'));
-
-// --- Readiness probe
-app.get('/readyz', async (_, res) => {
-  try {
-    const client = await pool.connect();
-    await client.query('SELECT 1');
-    client.release();
-    res.send('OK');
-  } catch (err) {
-    res.status(500).send('Not Ready');
+  if (scrapeFailed) {
+    // If collection failed, return scrape error response
+    res.status(500).send('# Exporter scrape failed\n');
+    return;
   }
-});
 
-app.get('/livez', (_, res) => {
-  res.status(200).send('OK');
+  try {
+    // Only generate metrics if scrape succeeded
+    const metrics = await register.metrics();
+    res.set('Content-Type', register.contentType);
+    res.send(metrics);
+  } catch (err) {
+    // This very rarely fails (prom-client error)
+    console.error('[ERROR] Failed to generate metrics output:', err);
+    res.status(500).send('# Exporter output failure\n');
+  }
 });
 
 // --- Start Server ---
