@@ -4,7 +4,7 @@ A lightweight, configurable Prometheus exporter for PostgreSQL written in Node.j
 
 - Collects core PostgreSQL metrics (connections, database size)
 - Supports dynamic custom metrics via `queries.json`
-- Secured with optional API key using Bearer auth
+- Secured with API key using Bearer auth
 - Fully Docker-compatible and cloud-ready
 - Fast to set up, easy to extend
 
@@ -77,11 +77,14 @@ scrape_configs:
 
 ## Metrics Exposed
 
-| Metric                                 | Description                                     |
-|----------------------------------------|-------------------------------------------------|
-| `pg_active_connections`               | Number of active PostgreSQL connections         |
-| `pg_database_size_bytes{database="..."}` | Size of each database in bytes                  |
-| _Custom metrics_                      | Defined via `queries.json`, dynamically loaded  |
+| Metric                                   | Type   | Description                                       |
+|------------------------------------------|--------|---------------------------------------------------|
+| `pg_active_connections`                  | Gauge  | Number of active PostgreSQL connections           |
+| `pg_database_size_bytes{database="..."}` | Gauge  | Size of each database in bytes                    |
+| `exporter_up`                            | Gauge  | Always `1` if exporter is running (self-health)   |
+| `exporter_errors_total`                  | Counter| Total number of scrape errors encountered         |
+| `exporter_scrape_duration_seconds`       | Gauge  | Duration of each scrape in seconds                |
+| _Custom metrics_                         | Gauge  | Defined via `queries.json`, dynamically loaded    |
 
 ## Endpoints
 
@@ -89,14 +92,17 @@ scrape_configs:
 |--------------|--------|----------------|--------------------------------------|
 | `/metrics`   | GET    | ✅ Bearer Token | Prometheus scrape endpoint            |
 | `/healthz`   | GET    | ❌ None         | Liveness probe for health checks      |
-| `/livez`     | GET    | ❌ None         | Alias forLiveness probe for health checks      |
+| `/livez`     | GET    | ❌ None         | Liveness probe; returns `200 OK` if process is alive     |
 | `/readyz`    | GET    | ❌ None         | Readiness probe. Returns `200 OK` if the database connection is successful. |
 
 ### Authorization
 
-The `/metrics` endpoint is protected with a Bearer token.
-You must set the `Authorization` header:
-`Authorization: Bearer your_secret_key`
+The `/metrics` endpoint requires a Bearer token.
+
+You must include the following HTTP header:
+```
+Authorization: Bearer your_secret_key
+```
 
 ## Configuration
 
@@ -107,18 +113,19 @@ You must set the `Authorization` header:
 | `DB_USER`          | PostgreSQL user                        |
 | `DB_PASS`          | PostgreSQL password                    |
 | `DB_NAME`          | PostgreSQL database                    |
-| `PORT`             | HTTP server port (default `9187`)      |
+| `EXPORTER_PORT`    | HTTP server port (default `9187`)      |
 | `EXPORTER_API_KEY` | Bearer token for `/metrics`            |
 | `QUERIES_FILE`     | Optional custom path to `queries.json` |
 
 ## TODOs/Improvement Ideas
 - [x] Rate-limit `/metrics` endpoint to protect against abuse or scraping loops
+- [x] Add a test metric (like `exporter_up`) to confirm exporter is functioning
+
 - [ ] Add support for `valueField` in `queries.json` to avoid guesswork
 - [ ] Optional: Reload `queries.json` periodically without restart (hot reload)
 - [ ] Optional: Support token auth via query param (e.g., `?token=...`)
 - [ ] Add `/configz` endpoint to return current query config (debugging/dev)
 - [ ] Publish prebuilt Docker image to GitHub Container Registry or Docker Hub
-- [ ] Add a test metric (like `exporter_up`) to confirm exporter is functioning
 - [ ] Add unit tests for query loading and metric registration
 - [ ] Support multiple database connections (e.g., `DB_URLS=...`)
 - [ ] Allow loading `.sql` files instead of inline queries (for large SQL)
