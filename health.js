@@ -1,8 +1,6 @@
-module.exports = function(app, pool) {
+function registerHealthEndpoints(app, pool) {
   app.get('/healthz', (_, res) => res.status(200).send('OK'));
-
   app.get('/livez', (_, res) => res.status(200).send('OK'));
-
   app.get('/readyz', async (_, res) => {
     try {
       const client = await pool.connect();
@@ -13,4 +11,6 @@ module.exports = function(app, pool) {
       res.status(500).send('Not Ready');
     }
   });
-};
+}
+
+module.exports = registerHealthEndpoints;

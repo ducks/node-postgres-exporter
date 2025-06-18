@@ -26,7 +26,9 @@ const app = express();
 
 const rateLimit = require('express-rate-limit');
 
-require('./health')(app, pool);
+// --- Registering Health Endpoints ---
+const registerHealthEndpoints = require('./health');
+registerHealthEndpoints(app, pool);
 
 // --- Config ---
 const PORT = process.env.PORT || 9187;
