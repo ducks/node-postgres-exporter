@@ -1,22 +1,42 @@
 require('dotenv').config();
 
-const fs = require('fs');
-const path = require('path');
-
 const express = require('express');
-const { Pool } = require('pg');
-const client = require('prom-client');
+
+const {
+  pool,
+  shutdown
+} = require('./db');
+
+const {
+  register,
+  exporterErrors,
+  scrapeDuration,
+  pgActiveConnections,
+  pgDatabaseSize
+} = require('./metrics');
+
+const {
+  loadCustomMetrics,
+  collectCustomMetrics
+} = require('./customMetrics');
+
+const authMiddleware = require('./auth');
 
 const app = express();
-const register = new client.Registry();
 
 const rateLimit = require('express-rate-limit');
 
+// --- Registering Health Endpoints ---
+const registerHealthEndpoints = require('./health');
+registerHealthEndpoints(app, pool);
+
 // --- Config ---
 const PORT = process.env.PORT || 9187;
-const API_KEY = process.env.EXPORTER_API_KEY || null;
 
-const QUERIES_PATH = process.env.QUERIES_FILE || path.join(__dirname, 'queries.json');
+// --- Startup Logging ---
+console.log(`Exporter starting on port ${PORT}`);
+console.log(`Auth enabled: ${!!process.env.EXPORTER_API_KEY}`);
+console.log(`Using queries file: ${process.env.QUERIES_FILE || 'queries.json'}`);
 
 // --- Rate limit config ---
 const metricsLimiter = rateLimit({
@@ -26,113 +46,7 @@ const metricsLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// --- Postgres Pool ---
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASS || 'postgres',
-  database: process.env.DB_NAME || 'postgres',
-  port: process.env.DB_PORT || 5432,
-  max: 5,
-  connectionTimeoutMillis: 5000,
-  idleTimeoutMillis: 10000,
-});
-
-register.setDefaultLabels({ exporter: 'custom_pg_exporter' });
-
-// --- Metrics ---
-const pgActiveConnections = new client.Gauge({
-  name: 'pg_active_connections',
-  help: 'Number of active PostgreSQL connections',
-});
-
-register.registerMetric(pgActiveConnections);
-
-const pgDatabaseSize = new client.Gauge({
-  name: 'pg_database_size_bytes',
-  help: 'Database size in bytes',
-  labelNames: ['database'],
-});
-
-register.registerMetric(pgDatabaseSize);
-
-const exporterUp = new client.Gauge({
-  name: 'exporter_up',
-  help: 'Exporter process is running',
-});
-
-register.registerMetric(exporterUp);
-exporterUp.set(1);
-
-const scrapeDuration = new client.Gauge({
-  name: 'exporter_scrape_duration_seconds',
-  help: 'Duration of last scrape in seconds',
-});
-
-register.registerMetric(scrapeDuration);
-
-const exporterErrors = new client.Counter({
-  name: 'exporter_errors_total',
-  help: 'Total scrape errors encountered',
-});
-
-register.registerMetric(exporterErrors);
-
-
-const customMetrics = [];
-
-function loadCustomMetrics() {
-  if (!fs.existsSync(QUERIES_PATH)) {
-    console.warn(`[WARN] No queries file found at ${QUERIES_PATH}`);
-    return;
-  }
-
-  let queries;
-  try {
-    queries = JSON.parse(fs.readFileSync(QUERIES_PATH, 'utf8'));
-  } catch (err) {
-    console.error(`[ERROR] Failed to parse queries file: ${err.message}`);
-    return;
-  }
-
-  if (!Array.isArray(queries)) {
-    console.error('[ERROR] queries.json must contain an array of query objects');
-    return;
-  }
-
-  queries.forEach((q, i) => {
-    const { name, help, type = 'gauge', labels = [], query } = q;
-    console.log(q);
-
-    if (!name || !help || !query) {
-      console.warn(`[SKIP] Query entry #${i} is missing required fields.`);
-      return;
-    }
-
-    if (type !== 'gauge') {
-      console.warn(`[SKIP] Only 'gauge' type is supported for now: ${name}`);
-      return;
-    }
-
-    try {
-      const metric = new client.Gauge({
-        name,
-        help,
-        labelNames: labels,
-      });
-
-      register.registerMetric(metric);
-
-      customMetrics.push({ definition: q, instance: metric });
-    } catch (err) {
-      console.error(`[ERROR] Failed to register metric "${name}": ${err.message}`);
-    }
-  });
-
-  console.log(`[INFO] Loaded ${customMetrics.length} custom metrics`);
-}
-
-loadCustomMetrics();
+loadCustomMetrics(register);
 
 // --- Metric Collector ---
 async function collectMetrics() {
@@ -153,44 +67,8 @@ async function collectMetrics() {
       pgDatabaseSize.set({ database: row.datname }, parseInt(row.size, 10));
     });
 
-    // Custom metrics from queries.json
-    for (const { definition, instance } of customMetrics) {
-      try {
-        const result = await client.query(definition.query);
+    await collectCustomMetrics(client);
 
-        result.rows.forEach(row => {
-          const labels = {};
-          let value = null;
-          let valueFieldUsed = definition.valueField || null;
-
-          for (const key in row) {
-            if (definition.labels.includes(key)) {
-              labels[key] = row[key];
-            } else if (
-              !valueFieldUsed &&
-              typeof row[key] === 'number' &&
-              value === null
-            ) {
-              valueFieldUsed = key;
-              value = row[key];
-            } else if (key === valueFieldUsed) {
-              value = row[key];
-            }
-          }
-
-          if (value !== null) {
-            instance.set(labels, value);
-          } else {
-            console.warn(
-              `[CUSTOM] No numeric value found for "${definition.name}" row:`,
-              row
-            );
-          }
-        });
-      } catch (err) {
-        console.error(`[CUSTOM] Failed to run "${definition.name}":`, err.message);
-      }
-    }
   } catch (err) {
     console.error('[COLLECT] Failed to gather metrics:', err.message);
   } finally {
@@ -198,53 +76,38 @@ async function collectMetrics() {
   }
 }
 
-function authMiddleware(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const expected = `Bearer ${API_KEY}`;
-
-  if (!authHeader || authHeader !== expected) {
-    return res.status(403).send('Forbidden');
-  }
-
-  next();
-}
-
 // --- /metrics route ---
 app.get('/metrics', authMiddleware, metricsLimiter, async (_, res) => {
   const start = Date.now();
 
+  let scrapeFailed = false;
+
   try {
     await collectMetrics();
-
   } catch (err) {
     console.error('[ERROR] Failed to collect metrics:', err);
     exporterErrors.inc();
-    res.status(500).send('# Exporter error\n');
+    scrapeFailed = true;
   } finally {
     scrapeDuration.set((Date.now() - start) / 1000);
   }
 
-  res.set('Content-Type', register.contentType);
-  res.end(await register.metrics());
-});
-
-// --- Healthcheck ---
-app.get('/healthz', (_, res) => res.send('OK'));
-
-// --- Readiness probe
-app.get('/readyz', async (_, res) => {
-  try {
-    const client = await pool.connect();
-    await client.query('SELECT 1');
-    client.release();
-    res.send('OK');
-  } catch (err) {
-    res.status(500).send('Not Ready');
+  if (scrapeFailed) {
+    // If collection failed, return scrape error response
+    res.status(500).send('# Exporter scrape failed\n');
+    return;
   }
-});
 
-app.get('/livez', (_, res) => {
-  res.status(200).send('OK');
+  try {
+    // Only generate metrics if scrape succeeded
+    const metrics = await register.metrics();
+    res.set('Content-Type', register.contentType);
+    res.send(metrics);
+  } catch (err) {
+    // This very rarely fails (prom-client error)
+    console.error('[ERROR] Failed to generate metrics output:', err);
+    res.status(500).send('# Exporter output failure\n');
+  }
 });
 
 // --- Start Server ---
@@ -253,18 +116,5 @@ app.listen(PORT, () => {
 });
 
 // --- Graceful Shutdown ---
-process.on('SIGINT', shutdown_gracefully);
-process.on('SIGTERM', shutdown_gracefully);
-
-async function shutdown_gracefully() {
-  console.log('Shutting down gracefully...');
-
-  try {
-    await pool.end();  // Close Postgres pool
-    console.log('Database pool closed');
-  } catch (err) {
-    console.error('Error during pool shutdown:', err);
-  } finally {
-    process.exit(0);
-  }
-}
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
