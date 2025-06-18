@@ -1,16 +1,16 @@
-# 🐘 postgres-exporter
+# postgres-exporter
 
 A lightweight, configurable Prometheus exporter for PostgreSQL written in Node.js.
 
-- 🔍 Collects core PostgreSQL metrics (connections, database size)
-- 📊 Supports dynamic custom metrics via `queries.json`
-- 🔐 Secured with optional API key using Bearer auth
-- 🐳 Fully Docker-compatible and cloud-ready
-- ⚡ Fast to set up, easy to extend
+- Collects core PostgreSQL metrics (connections, database size)
+- Supports dynamic custom metrics via `queries.json`
+- Secured with optional API key using Bearer auth
+- Fully Docker-compatible and cloud-ready
+- Fast to set up, easy to extend
 
 ---
 
-## 🚀 Quickstart
+## Quickstart
 
 ### 1. Clone and configure
 
