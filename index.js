@@ -1,19 +1,24 @@
 require('dotenv').config();
 
-const fs = require('fs');
-const path = require('path');
-
 const express = require('express');
 
-const { pool, shutdown_gracefully } = require('./db');
 const {
-  client,
+  pool,
+  shutdown_gracefully
+} = require('./db');
+
+const {
   register,
   exporterErrors,
   scrapeDuration,
   pgActiveConnections,
   pgDatabaseSize
 } = require('./metrics');
+
+const {
+  loadCustomMetrics,
+  collectCustomMetrics
+} = require('./customMetrics');
 
 const app = express();
 
@@ -23,7 +28,6 @@ const rateLimit = require('express-rate-limit');
 const PORT = process.env.PORT || 9187;
 const API_KEY = process.env.EXPORTER_API_KEY || null;
 
-const QUERIES_PATH = process.env.QUERIES_FILE || path.join(__dirname, 'queries.json');
 
 // --- Rate limit config ---
 const metricsLimiter = rateLimit({
@@ -33,60 +37,7 @@ const metricsLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-const customMetrics = [];
-
-function loadCustomMetrics() {
-  if (!fs.existsSync(QUERIES_PATH)) {
-    console.warn(`[WARN] No queries file found at ${QUERIES_PATH}`);
-    return;
-  }
-
-  let queries;
-  try {
-    queries = JSON.parse(fs.readFileSync(QUERIES_PATH, 'utf8'));
-  } catch (err) {
-    console.error(`[ERROR] Failed to parse queries file: ${err.message}`);
-    return;
-  }
-
-  if (!Array.isArray(queries)) {
-    console.error('[ERROR] queries.json must contain an array of query objects');
-    return;
-  }
-
-  queries.forEach((q, i) => {
-    const { name, help, type = 'gauge', labels = [], query } = q;
-    console.log(q);
-
-    if (!name || !help || !query) {
-      console.warn(`[SKIP] Query entry #${i} is missing required fields.`);
-      return;
-    }
-
-    if (type !== 'gauge') {
-      console.warn(`[SKIP] Only 'gauge' type is supported for now: ${name}`);
-      return;
-    }
-
-    try {
-      const metric = new client.Gauge({
-        name,
-        help,
-        labelNames: labels,
-      });
-
-      register.registerMetric(metric);
-
-      customMetrics.push({ definition: q, instance: metric });
-    } catch (err) {
-      console.error(`[ERROR] Failed to register metric "${name}": ${err.message}`);
-    }
-  });
-
-  console.log(`[INFO] Loaded ${customMetrics.length} custom metrics`);
-}
-
-loadCustomMetrics();
+loadCustomMetrics(register);
 
 // --- Metric Collector ---
 async function collectMetrics() {
@@ -107,44 +58,8 @@ async function collectMetrics() {
       pgDatabaseSize.set({ database: row.datname }, parseInt(row.size, 10));
     });
 
-    // Custom metrics from queries.json
-    for (const { definition, instance } of customMetrics) {
-      try {
-        const result = await client.query(definition.query);
+    await collectCustomMetrics(client);
 
-        result.rows.forEach(row => {
-          const labels = {};
-          let value = null;
-          let valueFieldUsed = definition.valueField || null;
-
-          for (const key in row) {
-            if (definition.labels.includes(key)) {
-              labels[key] = row[key];
-            } else if (
-              !valueFieldUsed &&
-              typeof row[key] === 'number' &&
-              value === null
-            ) {
-              valueFieldUsed = key;
-              value = row[key];
-            } else if (key === valueFieldUsed) {
-              value = row[key];
-            }
-          }
-
-          if (value !== null) {
-            instance.set(labels, value);
-          } else {
-            console.warn(
-              `[CUSTOM] No numeric value found for "${definition.name}" row:`,
-              row
-            );
-          }
-        });
-      } catch (err) {
-        console.error(`[CUSTOM] Failed to run "${definition.name}":`, err.message);
-      }
-    }
   } catch (err) {
     console.error('[COLLECT] Failed to gather metrics:', err.message);
   } finally {
