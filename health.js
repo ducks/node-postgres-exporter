@@ -1,5 +1,5 @@
 module.exports = function(app, pool) {
-  app.get('/healthz', (_, res) => res.send('OK'));
+  app.get('/healthz', (_, res) => res.status(200).send('OK'));
 
   app.get('/livez', (_, res) => res.status(200).send('OK'));
 
@@ -8,7 +8,7 @@ module.exports = function(app, pool) {
       const client = await pool.connect();
       await client.query('SELECT 1');
       client.release();
-      res.send('OK');
+      res.status(200).send('OK');
     } catch (err) {
       res.status(500).send('Not Ready');
     }
