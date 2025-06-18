@@ -33,6 +33,11 @@ registerHealthEndpoints(app, pool);
 // --- Config ---
 const PORT = process.env.PORT || 9187;
 
+// --- Startup Logging ---
+console.log(`Exporter starting on port ${PORT}`);
+console.log(`Auth enabled: ${!!process.env.EXPORTER_API_KEY}`);
+console.log(`Using queries file: ${process.env.QUERIES_FILE || 'queries.json'}`);
+
 // --- Rate limit config ---
 const metricsLimiter = rateLimit({
   windowMs: 5 * 1000, // 5 seconds

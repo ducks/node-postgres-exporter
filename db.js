@@ -28,5 +28,5 @@ async function shutdown() {
 
 module.exports = {
   pool,
-  shutdown_gracefully
+  shutdown
 }
