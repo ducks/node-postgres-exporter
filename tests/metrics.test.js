@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { register } from '../metrics.js';
+import { register } from '../src/metrics.js';
 
 describe('Core Metrics Registration', () => {
   it('registers base metrics', () => {
