@@ -4,8 +4,9 @@ const fs = require('fs');
 const path = require('path');
 
 const express = require('express');
-const { Pool } = require('pg');
 const client = require('prom-client');
+
+const { pool, shutdown_gracefully } = require('./db');
 
 const app = express();
 const register = new client.Registry();
@@ -26,17 +27,6 @@ const metricsLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// --- Postgres Pool ---
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASS || 'postgres',
-  database: process.env.DB_NAME || 'postgres',
-  port: process.env.DB_PORT || 5432,
-  max: 5,
-  connectionTimeoutMillis: 5000,
-  idleTimeoutMillis: 10000,
-});
 
 register.setDefaultLabels({ exporter: 'custom_pg_exporter' });
 
@@ -255,16 +245,3 @@ app.listen(PORT, () => {
 // --- Graceful Shutdown ---
 process.on('SIGINT', shutdown_gracefully);
 process.on('SIGTERM', shutdown_gracefully);
-
-async function shutdown_gracefully() {
-  console.log('Shutting down gracefully...');
-
-  try {
-    await pool.end();  // Close Postgres pool
-    console.log('Database pool closed');
-  } catch (err) {
-    console.error('Error during pool shutdown:', err);
-  } finally {
-    process.exit(0);
-  }
-}
