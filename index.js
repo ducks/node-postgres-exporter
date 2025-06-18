@@ -4,12 +4,18 @@ const fs = require('fs');
 const path = require('path');
 
 const express = require('express');
-const client = require('prom-client');
 
 const { pool, shutdown_gracefully } = require('./db');
+const {
+  client,
+  register,
+  exporterErrors,
+  scrapeDuration,
+  pgActiveConnections,
+  pgDatabaseSize
+} = require('./metrics');
 
 const app = express();
-const register = new client.Registry();
 
 const rateLimit = require('express-rate-limit');
 
@@ -26,48 +32,6 @@ const metricsLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-
-
-register.setDefaultLabels({ exporter: 'custom_pg_exporter' });
-
-// --- Metrics ---
-const pgActiveConnections = new client.Gauge({
-  name: 'pg_active_connections',
-  help: 'Number of active PostgreSQL connections',
-});
-
-register.registerMetric(pgActiveConnections);
-
-const pgDatabaseSize = new client.Gauge({
-  name: 'pg_database_size_bytes',
-  help: 'Database size in bytes',
-  labelNames: ['database'],
-});
-
-register.registerMetric(pgDatabaseSize);
-
-const exporterUp = new client.Gauge({
-  name: 'exporter_up',
-  help: 'Exporter process is running',
-});
-
-register.registerMetric(exporterUp);
-exporterUp.set(1);
-
-const scrapeDuration = new client.Gauge({
-  name: 'exporter_scrape_duration_seconds',
-  help: 'Duration of last scrape in seconds',
-});
-
-register.registerMetric(scrapeDuration);
-
-const exporterErrors = new client.Counter({
-  name: 'exporter_errors_total',
-  help: 'Total scrape errors encountered',
-});
-
-register.registerMetric(exporterErrors);
-
 
 const customMetrics = [];
 
