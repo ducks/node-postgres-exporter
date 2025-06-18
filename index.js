@@ -20,7 +20,9 @@ const {
   collectCustomMetrics
 } = require('./customMetrics');
 
-const authMiddleware = require('./auth');
+const createAuthMiddleware = require('./auth');
+
+const authMiddleware = createAuthMiddleware(process.env.EXPORTER_API_KEY);
 
 const app = express();
 

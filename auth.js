@@ -1,22 +1,18 @@
-require('dotenv').config();
+function createAuthMiddleware(apiKey) {
+  return (req, res, next) => {
+    if (!apiKey) {
+      console.warn('[AUTH] No API key set');
+      return res.status(403).send('Forbidden');
+    }
 
-const API_KEY = process.env.EXPORTER_API_KEY || null;
+    const authHeader = req.headers['authorization'];
+    const expected = `Bearer ${apiKey}`;
 
-function authMiddleware(req, res, next) {
-  if (!API_KEY) {
-    console.warn('[AUTH] No API key set; rejecting all requests');
-    return res.status(403).send('Forbidden');
+    if (!authHeader || authHeader !== expected) {
+      return res.status(403).send('Forbidden');
+    }
+
+    next();
   }
-
-  const authHeader = req.headers['authorization'];
-  const expected = `Bearer ${API_KEY}`;
-
-  if (!authHeader || authHeader !== expected) {
-    return res.status(403).send('Forbidden');
-  }
-
-  next();
 }
-
-module.exports = authMiddleware;
-
+module.exports = createAuthMiddleware;
