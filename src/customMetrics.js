@@ -44,7 +44,7 @@ function loadCustomMetrics(register, queriesFilePath) {
       const metric = new Gauge({
         name,
         help,
-        labelNames: labels,
+        labelNames: ['db', ...labels],
       });
 
       register.registerMetric(metric);
@@ -59,48 +59,40 @@ function loadCustomMetrics(register, queriesFilePath) {
 }
 
 // --- Metric Collector ---
-async function collectCustomMetrics(client) {
-  try {
-    // Custom metrics from queries.json
-    for (const { definition, instance } of customMetrics) {
-      try {
-        const result = await client.query(definition.query);
+async function collectCustomMetrics(client, dbName) {
+  for (const { definition, instance } of customMetrics) {
+    try {
+      const result = await client.query(definition.query);
 
-        result.rows.forEach(row => {
-          const labels = {};
-          let value = null;
-          let valueFieldUsed = definition.valueField || null;
+      result.rows.forEach(row => {
+        const labels = { db: dbName };
 
-          for (const key in row) {
-            if (definition.labels.includes(key)) {
-              labels[key] = row[key];
-            } else if (
-              !valueFieldUsed &&
-              typeof row[key] === 'number' &&
-              value === null
-            ) {
-              valueFieldUsed = key;
-              value = row[key];
-            } else if (key === valueFieldUsed) {
-              value = row[key];
-            }
+        let value = null;
+        let valueFieldUsed = definition.valueField || null;
+
+        for (const key in row) {
+          if (definition.labels.includes(key)) {
+            labels[key] = row[key];
+          } else if (!valueFieldUsed && typeof row[key] === 'number' && value === null) {
+            valueFieldUsed = key;
+            value = row[key];
+          } else if (key === valueFieldUsed) {
+            value = row[key];
           }
+        }
 
-          if (value !== null) {
-            instance.set(labels, value);
-          } else {
-            console.warn(
-              `[CUSTOM] No numeric value found for "${definition.name}" row:`,
-              row
-            );
-          }
-        });
-      } catch (err) {
-        console.error(`[CUSTOM] Failed to run "${definition.name}":`, err.message);
-      }
+        if (value !== null) {
+          instance.set(labels, value);
+        } else {
+          console.warn(
+            `[CUSTOM] No numeric value found for "${definition.name}" row:`,
+            row
+          );
+        }
+      });
+    } catch (err) {
+      console.error(`[CUSTOM] Failed to run "${definition.name}":`, err.message);
     }
-  } catch (err) {
-    console.error('[COLLECT] Failed to gather metrics:', err.message);
   }
 }
 

@@ -28,13 +28,14 @@ register.registerMetric(exporterErrors);
 const pgActiveConnections = new client.Gauge({
   name: 'pg_active_connections',
   help: 'Number of active PostgreSQL connections',
+  labelNames: ['db'],
 });
 register.registerMetric(pgActiveConnections);
 
 const pgDatabaseSize = new client.Gauge({
   name: 'pg_database_size_bytes',
   help: 'Database size in bytes',
-  labelNames: ['database'],
+  labelNames: ['db', 'database'],
 });
 register.registerMetric(pgDatabaseSize);
 
