@@ -3,7 +3,8 @@ require('dotenv').config();
 const express = require('express');
 
 const {
-  pool,
+  loadDatabaseConfigs,
+  pools,
   shutdown
 } = require('./db');
 
@@ -30,10 +31,13 @@ const rateLimit = require('express-rate-limit');
 
 // --- Registering Health Endpoints ---
 const registerHealthEndpoints = require('./health');
-registerHealthEndpoints(app, pool);
+registerHealthEndpoints(app, pools);
 
 // --- Config ---
 const PORT = process.env.PORT || 9187;
+
+// --- DB config
+loadDatabaseConfigs(process.env.DBS_CONFIG_FILE);
 
 // --- Startup Logging ---
 console.log(`Exporter starting on port ${PORT}`);
@@ -52,29 +56,38 @@ loadCustomMetrics(register);
 
 // --- Metric Collector ---
 async function collectMetrics() {
-  const client = await pool.connect();
-  try {
-    // Get active connections
-    const activeRes = await client.query(`
+  for (const { name: dbName, pool } of pools) {
+    const client = await pool.connect();
+
+    try {
+      // Get active connections
+      const activeRes = await client.query(`
       SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'
     `);
-    pgActiveConnections.set(parseInt(activeRes.rows[0].count, 10));
+     pgActiveConnections.set({ db: dbName }, parseInt(activeRes.rows[0].count, 10));
 
-    // Get size of current database
-    const sizeRes = await client.query(`
+      // Get size of current database
+      const sizeRes = await client.query(`
       SELECT pg_database.datname, pg_database_size(pg_database.datname) AS size
       FROM pg_database WHERE datistemplate = false
     `);
-    sizeRes.rows.forEach(row => {
-      pgDatabaseSize.set({ database: row.datname }, parseInt(row.size, 10));
-    });
+      sizeRes.rows.forEach(row => {
+        pgDatabaseSize.set(
+          {
+            db: dbName,
+            database: row.datname
+          },
+          parseInt(row.size, 10)
+        );
+      });
 
-    await collectCustomMetrics(client);
+      await collectCustomMetrics(client, dbName);
 
-  } catch (err) {
-    console.error('[COLLECT] Failed to gather metrics:', err.message);
-  } finally {
-    client.release();
+    } catch (err) {
+      console.error('[COLLECT] Failed to gather metrics:', err.message);
+    } finally {
+      client.release();
+    }
   }
 }
 

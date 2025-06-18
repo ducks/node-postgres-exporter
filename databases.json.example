@@ -1,0 +1,12 @@
+{
+  "databases": [
+    {
+      "name": "db1",
+      "host": "postgres1",
+      "port": 5432,
+      "user": "postgres",
+      "pass": "postgres",
+      "database": "db1"
+    }
+  ]
+}
