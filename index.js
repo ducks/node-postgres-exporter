@@ -10,11 +10,21 @@ const client = require('prom-client');
 const app = express();
 const register = new client.Registry();
 
+const rateLimit = require('express-rate-limit');
+
 // --- Config ---
 const PORT = process.env.PORT || 9187;
 const API_KEY = process.env.EXPORTER_API_KEY || null;
 
 const QUERIES_PATH = process.env.QUERIES_FILE || path.join(__dirname, 'queries.json');
+
+// --- Rate limit config ---
+const metricsLimiter = rateLimit({
+  windowMs: 5 * 1000, // 5 seconds
+  max: 2, // allow 2 requests every 5s
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // --- Postgres Pool ---
 const pool = new Pool({
@@ -200,7 +210,7 @@ function authMiddleware(req, res, next) {
 }
 
 // --- /metrics route ---
-app.get('/metrics', authMiddleware, async (_, res) => {
+app.get('/metrics', authMiddleware, metricsLimiter, async (_, res) => {
   const start = Date.now();
 
   try {

@@ -112,11 +112,11 @@ You must set the `Authorization` header:
 | `QUERIES_FILE`     | Optional custom path to `queries.json` |
 
 ## TODOs/Improvement Ideas
+- [x] Rate-limit `/metrics` endpoint to protect against abuse or scraping loops
 - [ ] Add support for `valueField` in `queries.json` to avoid guesswork
 - [ ] Optional: Reload `queries.json` periodically without restart (hot reload)
 - [ ] Optional: Support token auth via query param (e.g., `?token=...`)
 - [ ] Add `/configz` endpoint to return current query config (debugging/dev)
-- [ ] Rate-limit `/metrics` endpoint to protect against abuse or scraping loops
 - [ ] Publish prebuilt Docker image to GitHub Container Registry or Docker Hub
 - [ ] Add a test metric (like `exporter_up`) to confirm exporter is functioning
 - [ ] Add unit tests for query loading and metric registration
