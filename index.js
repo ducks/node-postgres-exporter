@@ -243,9 +243,18 @@ app.listen(PORT, () => {
 });
 
 // --- Graceful Shutdown ---
-process.on('SIGINT', async () => {
-  console.log('\nShutting down gracefully...');
-  await pool.end();
-  process.exit(0);
-});
+process.on('SIGINT', shutdown_gracefully);
+process.on('SIGTERM', shutdown_gracefully);
 
+async function shutdown_gracefully() {
+  console.log('Shutting down gracefully...');
+
+  try {
+    await pool.end();  // Close Postgres pool
+    console.log('Database pool closed');
+  } catch (err) {
+    console.error('Error during pool shutdown:', err);
+  } finally {
+    process.exit(0);
+  }
+}
