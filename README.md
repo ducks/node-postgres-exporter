@@ -15,8 +15,8 @@ A lightweight, configurable Prometheus exporter for PostgreSQL written in Node.j
 ### 1. Clone and configure
 
 ```bash
-git clone https://github.com/ducks/postgres-exporter.git
-cd postgres-exporter
+git clone git@github.com/ducks/node-postgres-exporter.git
+cd node-postgres-exporter
 cp .env.example .env
 ```
 
@@ -29,7 +29,7 @@ DB_USER=readonly_user
 DB_PASS=readonly_pass
 DB_NAME=your_database
 
-PORT=9187
+EXPORTER_PORT=9187
 EXPORTER_API_KEY=your_secret_key
 ```
 
@@ -120,16 +120,15 @@ Authorization: Bearer your_secret_key
 ## TODOs/Improvement Ideas
 - [x] Rate-limit `/metrics` endpoint to protect against abuse or scraping loops
 - [x] Add a test metric (like `exporter_up`) to confirm exporter is functioning
+- [x] Add unit tests for query loading and metric registration
+- [x] Gracefully shut down and close DB pool on SIGINT/SIGTERM
 
-- [ ] Add support for `valueField` in `queries.json` to avoid guesswork
 - [ ] Optional: Reload `queries.json` periodically without restart (hot reload)
 - [ ] Optional: Support token auth via query param (e.g., `?token=...`)
 - [ ] Add `/configz` endpoint to return current query config (debugging/dev)
 - [ ] Publish prebuilt Docker image to GitHub Container Registry or Docker Hub
-- [ ] Add unit tests for query loading and metric registration
 - [ ] Support multiple database connections (e.g., `DB_URLS=...`)
 - [ ] Allow loading `.sql` files instead of inline queries (for large SQL)
-- [ ] Gracefully shut down and close DB pool on SIGINT/SIGTERM
 
 ## License
 
