@@ -36,14 +36,38 @@ const pgActiveConnections = new client.Gauge({
   help: 'Number of active PostgreSQL connections',
 });
 
+register.registerMetric(pgActiveConnections);
+
 const pgDatabaseSize = new client.Gauge({
   name: 'pg_database_size_bytes',
   help: 'Database size in bytes',
   labelNames: ['database'],
 });
 
-register.registerMetric(pgActiveConnections);
 register.registerMetric(pgDatabaseSize);
+
+const exporterUp = new client.Gauge({
+  name: 'exporter_up',
+  help: 'Exporter process is running',
+});
+
+register.registerMetric(exporterUp);
+exporterUp.set(1);
+
+const scrapeDuration = new client.Gauge({
+  name: 'exporter_scrape_duration_seconds',
+  help: 'Duration of last scrape in seconds',
+});
+
+register.registerMetric(scrapeDuration);
+
+const exporterErrors = new client.Counter({
+  name: 'exporter_errors_total',
+  help: 'Total scrape errors encountered',
+});
+
+register.registerMetric(exporterErrors);
+
 
 const customMetrics = [];
 
@@ -177,14 +201,21 @@ function authMiddleware(req, res, next) {
 
 // --- /metrics route ---
 app.get('/metrics', authMiddleware, async (_, res) => {
+  const start = Date.now();
+
   try {
     await collectMetrics();
-    res.set('Content-Type', register.contentType);
-    res.end(await register.metrics());
+
   } catch (err) {
     console.error('[ERROR] Failed to collect metrics:', err);
+    exporterErrors.inc();
     res.status(500).send('# Exporter error\n');
+  } finally {
+    scrapeDuration.set((Date.now() - start) / 1000);
   }
+
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
 });
 
 // --- Healthcheck ---
