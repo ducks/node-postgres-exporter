@@ -6,10 +6,10 @@ const { Gauge } = require('prom-client');
 const customMetrics = [];
 
 function loadCustomMetrics(register, queriesFilePath) {
-  const filePath = queriesFilePath || path.join(__dirname, 'queries.json');
+  const filePath = queriesFilePath || path.join(__dirname, '../queries.json');
 
   if (!fs.existsSync(filePath)) {
-    console.warn(`[WARN] No queries file found at ${QUERIES_PATH}`);
+    console.warn(`[WARN] No queries file found at ${filePath}`);
     return;
   }
 

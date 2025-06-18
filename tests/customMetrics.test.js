@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { Registry } from 'prom-client';
-import { loadCustomMetrics } from '../customMetrics.js';
+import { loadCustomMetrics } from '../src/customMetrics.js';
 
 const tempFile = path.join(__dirname, 'queries.test.json');
 

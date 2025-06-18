@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import express from 'express';
 import request from 'supertest';
-import { pool } from '../db.js';
-import registerHealthEndpoints from '../health.js';
+import { pool } from '../src/db.js';
+import registerHealthEndpoints from '../src/health.js';
 
 describe('Health Endpoints', () => {
   const app = express();

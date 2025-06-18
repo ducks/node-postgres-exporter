@@ -13,4 +13,4 @@ COPY . .
 # Exposes port 9187
 # Runs `node index.js`
 EXPOSE 9187
-CMD ["node", "index.js"]
+CMD ["node", "./src/index.js"]

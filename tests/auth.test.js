@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import express from 'express';
 import request from 'supertest';
-import createAuthMiddleware from '../auth.js';
+import createAuthMiddleware from '../src/auth.js';
 
 describe('Auth Middleware', () => {
   const API_KEY = 'test-key';
