@@ -5,17 +5,17 @@ const { Gauge } = require('prom-client');
 
 const customMetrics = [];
 
-const QUERIES_PATH = process.env.QUERIES_FILE || path.join(__dirname, 'queries.json');
+function loadCustomMetrics(register, queriesFilePath) {
+  const filePath = queriesFilePath || path.join(__dirname, 'queries.json');
 
-function loadCustomMetrics(register) {
-  if (!fs.existsSync(QUERIES_PATH)) {
+  if (!fs.existsSync(filePath)) {
     console.warn(`[WARN] No queries file found at ${QUERIES_PATH}`);
     return;
   }
 
   let queries;
   try {
-    queries = JSON.parse(fs.readFileSync(QUERIES_PATH, 'utf8'));
+    queries = JSON.parse(fs.readFileSync(filePath, 'utf8'));
   } catch (err) {
     console.error(`[ERROR] Failed to parse queries file: ${err.message}`);
     return;
