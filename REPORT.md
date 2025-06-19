@@ -142,9 +142,3 @@ included for testing.
 - Publish prebuilt Docker image.
 - Expand automated test coverage (integration tests).
 - Automate configuration schema validation in CI pipeline.
-
-
-### CI/CD
-- Publish prebuilt Docker image
-- Full integration tests
-- Automated schema validation
