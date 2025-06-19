@@ -122,12 +122,12 @@ Authorization: Bearer your_secret_key
 - [x] Add a test metric (like `exporter_up`) to confirm exporter is functioning
 - [x] Add unit tests for query loading and metric registration
 - [x] Gracefully shut down and close DB pool on SIGINT/SIGTERM
+- [x] Support multiple database connections
 
 - [ ] Optional: Reload `queries.json` periodically without restart (hot reload)
 - [ ] Optional: Support token auth via query param (e.g., `?token=...`)
 - [ ] Add `/configz` endpoint to return current query config (debugging/dev)
 - [ ] Publish prebuilt Docker image to GitHub Container Registry or Docker Hub
-- [ ] Support multiple database connections (e.g., `DB_URLS=...`)
 - [ ] Allow loading `.sql` files instead of inline queries (for large SQL)
 
 ## License
