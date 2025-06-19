@@ -94,53 +94,55 @@ included for testing.
 ## Future Work
 
 ### High Priority
-1. Enhanced Error Isoloation
 
-- Currently, a failure to scrape any single database causes the entire scrape
-  to fail
-- Future work should allow for partial scrape success:
-  - Emit metrics for all healthy databases
-  - Record scrape failures per database as distinct error metrics
-  - Avoid full exporter scrape failures due to isolated DB outages
+1. Per-Database Failure Isolation
 
-2. Support for Additional Metric Types
+- Allow partial scrape success if individual database scrapes fail.
+- Report scrape failures per database as distinct metrics.
+- Prevent single database failure from blocking full scrape response.
 
-- Currently only `gauge` metric type is supported
-- Adding support for counter, histogram, and summary metric types would enable
-  broader metric use cases and better align with Prometheus best practices.
+2. Expanded Metric Type Support
+
+- Add support for Prometheus Histogram and Summary types.
+- Enable richer metrics for latency, distributions, and advanced analysis.
 
 ### Medium Priority
 
 1. Schema Validation for Config Files
-- Introduce JSON schema validation for both `queries.json` and `databases.json`
-- Fail fast on startup for misconfigured or invalid JSON files
-- Improves user experience and operational safety
 
-2. Configurable Value Field Extraction
-- Allow users to explicitly specify which column should be used as the metric
-  value via a `valueField` property
-- This removes ambiguity when queries return multiple numeric fields
+- Enforce JSON schema validation for `queries.json` and `databases.json`.
+- Fail fast on invalid configs for stronger operational safety.
+
+2. Explicit Value Field Extraction
+
+- Add `valueField` property in `queries.json` to disambiguate which numeric
+  column maps to metric value.
 
 3. Scrape Concurrency Control
-- Introduce scrape mutex to prevent overlapping scrapes in case Prometheus
-  issues concurrent requests (e.g. when using multiple targets or load
-  balancing).
 
-### Longer Term Enhancements
+- Protect against simultaneous scrapes triggered by misconfigured Prometheus
+  jobs or aggressive scraping behavior.
 
-1. Cardinality Protections
-- Implement internal checks to detect or limit high-cardinality label outputs
-  during scrapes
-- Protects Prometheus storage from unintended growth due to poorly designed
-  queries or unbounded label sets
+### Longer-Term Enhancements
 
-2. Hot Reload of configuration
-- Allow configuration changes (new queries or new databases) to be detected and
-  applied without requiring exporter restarts.
+1. Cardinality Safeguards
 
-3. Detect Unhealthy Databases
-- Introduce temporary quarantine for repeatedly failing database instances to
-  protect scrape performance.
+- Add internal protections to detect high-cardinality label sets during scrape.
+
+2. Hot-Reload of Configuration
+
+- Support dynamic config reload without restarting exporter.
+
+3. Database Health Quarantine
+
+- Introduce quarantine behavior for repeatedly failing database instances.
+
+### CI/CD
+
+- Publish prebuilt Docker image.
+- Expand automated test coverage (integration tests).
+- Automate configuration schema validation in CI pipeline.
+
 
 ### CI/CD
 - Publish prebuilt Docker image
