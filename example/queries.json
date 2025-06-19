@@ -19,5 +19,12 @@
   "type": "gauge",
   "labels": ["location"],
   "query": "SELECT location, SUM(hole_count)::int AS holes_in_location FROM courses GROUP BY location"
+  },
+  {
+  "name": "disc_golf_total_courses",
+  "help": "Total number of courses",
+  "type": "gauge",
+  "labels": [],
+  "query": "SELECT COUNT(*)::int AS course_count FROM courses"
   }
 ]

@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const { Gauge } = require('prom-client');
+const { Counter, Gauge } = require('prom-client');
 
 const customMetrics = [];
 
@@ -35,21 +35,22 @@ function loadCustomMetrics(register, queriesFilePath) {
       return;
     }
 
-    if (type !== 'gauge') {
-      console.warn(`[SKIP] Only 'gauge' type is supported for now: ${name}`);
-      return;
-    }
-
     try {
-      const metric = new Gauge({
-        name,
-        help,
-        labelNames: ['db', ...labels],
-      });
+      let metric;
+      const labelNames = [...labels, 'db'];
+
+      if (type === 'gauge') {
+        metric = new Gauge({ name, help, labelNames });
+      } else if (type === 'counter') {
+        metric = new Counter({ name, help, labelNames });
+      } else {
+        console.warn(`[SKIP] Unsupported metric type "${type}" for ${name}`);
+        return;
+      }
 
       register.registerMetric(metric);
-
       customMetrics.push({ definition: q, instance: metric });
+
     } catch (err) {
       console.error(`[ERROR] Failed to register metric "${name}": ${err.message}`);
     }
@@ -82,7 +83,13 @@ async function collectCustomMetrics(client, dbName) {
         }
 
         if (value !== null) {
-          instance.set(labels, value);
+          if (instance instanceof Gauge) {
+            instance.set(labels, value);
+          } else if (instance instanceof Counter) {
+            instance.inc(labels, value);
+          } else {
+            console.warn(`[CUSTOM] Unknown metric type for ${definition.name}`);
+          }
         } else {
           console.warn(
             `[CUSTOM] No numeric value found for "${definition.name}" row:`,
