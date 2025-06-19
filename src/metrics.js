@@ -39,6 +39,20 @@ const pgDatabaseSize = new client.Gauge({
 });
 register.registerMetric(pgDatabaseSize);
 
+const scrapeSuccess = new client.Gauge({
+  name: 'pg_scrape_success',
+  help: 'Database scrape success (1=success, 0=failure)',
+  labelNames: ['db'],
+});
+register.registerMetric(scrapeSuccess);
+
+const perDbScrapeDuration = new client.Gauge({
+  name: 'pg_scrape_duration_seconds',
+  help: 'Scrape duration per database',
+  labelNames: ['db'],
+});
+register.registerMetric(perDbScrapeDuration);
+
 // Export everything we need
 module.exports = {
   client,
@@ -48,4 +62,6 @@ module.exports = {
   exporterErrors,
   pgActiveConnections,
   pgDatabaseSize,
+  scrapeSuccess,
+  perDbScrapeDuration
 };

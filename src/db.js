@@ -6,7 +6,9 @@ const pools = [];
 
 const {
   pgActiveConnections,
-  pgDatabaseSize
+  pgDatabaseSize,
+  scrapeSuccess,
+  perDbScrapeDuration,
 } = require('./metrics');
 
 const { collectCustomMetrics } = require('./customMetrics');
@@ -85,7 +87,20 @@ async function scrapeDatabase({ name, pool }) {
       pgDatabaseSize.set({ database: row.datname, db: name }, parseInt(row.size, 10));
     });
 
-    await collectCustomMetrics(client, name); // Pass db name
+    const start = Date.now();
+
+    try {
+      await collectCustomMetrics(client, name);
+
+      scrapeSuccess.set({ db: name }, 1);
+    } catch (err) {
+      console.error(`[SCRAPE] Error scraping db ${name}:`, err);
+
+      scrapeSuccess.set({ db: name }, 0);
+    }
+
+    const duration = (Date.now() - start) / 1000;
+    perDbScrapeDuration.set({ db: name }, duration);
 
   } catch (err) {
     console.error(`[SCRAPE] Failed for DB ${name}:`, err.message);
