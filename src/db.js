@@ -4,6 +4,13 @@ const fs = require('fs');
 
 const pools = [];
 
+const {
+  pgActiveConnections,
+  pgDatabaseSize
+} = require('./metrics');
+
+const { collectCustomMetrics } = require('./customMetrics');
+
 function loadDatabaseConfigs(configFilePath) {
   const configPath = configFilePath || './databases.json';
 
@@ -59,8 +66,38 @@ async function shutdown() {
   process.exit(0);
 }
 
+async function scrapeDatabase({ name, pool }) {
+  const client = await pool.connect();
+
+  try {
+    // Core metrics:
+    const activeRes = await client.query(`
+      SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'
+    `);
+    pgActiveConnections.set({ db: name }, parseInt(activeRes.rows[0].count, 10));
+
+    const sizeRes = await client.query(`
+      SELECT pg_database.datname, pg_database_size(pg_database.datname) AS size
+      FROM pg_database WHERE datistemplate = false
+    `);
+
+    sizeRes.rows.forEach(row => {
+      pgDatabaseSize.set({ database: row.datname, db: name }, parseInt(row.size, 10));
+    });
+
+    await collectCustomMetrics(client, name); // Pass db name
+
+  } catch (err) {
+    console.error(`[SCRAPE] Failed for DB ${name}:`, err.message);
+    throw err;  // Optional: fail fast for this DB scrape
+  } finally {
+    client.release();
+  }
+}
+
 module.exports = {
   loadDatabaseConfigs,
   pools,
-  shutdown
+  shutdown,
+  scrapeDatabase,
 }
