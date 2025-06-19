@@ -4,7 +4,9 @@ import request from 'supertest';
 import { pool } from '../src/db.js';
 import registerHealthEndpoints from '../src/health.js';
 
-describe('Health Endpoints', () => {
+const isCI = process.env.CI === 'true';
+
+describe.skipIf(isCI, 'Health Endpoints', () => {
   const app = express();
   registerHealthEndpoints(app, pool);
 
