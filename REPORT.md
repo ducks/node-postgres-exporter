@@ -113,11 +113,18 @@ included for testing.
 - Prevent credential exposure via configuration files, CI logs, or image builds.
 - Enables safe deployment of the exporter in production environments.
 
-2. Per-Database Failure Isolation
+2. Network-resilient scrape buffering
+
+- Decouple database scraping from Prometheus pull cycle
+- Run internal periodic scrape loop with local result caching
+- Serve cached data to Prometheus to tolerate transient network issues
+- Prevents gaps in Prometheus data caused by brief network disruptions
+
+3. Per-Database Failure Isolation
 
 - Prevent single database failure from blocking full scrape response.
 
-3. Expanded Metric Type Support
+4. Expanded Metric Type Support
 
 - Add support for Prometheus Histogram and Summary types.
 - Enable richer metrics for latency, distributions, and advanced analysis.
