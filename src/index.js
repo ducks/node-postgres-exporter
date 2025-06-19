@@ -5,15 +5,14 @@ const express = require('express');
 const {
   loadDatabaseConfigs,
   pools,
-  shutdown
+  shutdown,
+  scrapeDatabase
 } = require('./db');
 
 const {
   register,
   exporterErrors,
   scrapeDuration,
-  pgActiveConnections,
-  pgDatabaseSize
 } = require('./metrics');
 
 const {
@@ -56,39 +55,9 @@ loadCustomMetrics(register);
 
 // --- Metric Collector ---
 async function collectMetrics() {
-  for (const { name: dbName, pool } of pools) {
-    const client = await pool.connect();
-
-    try {
-      // Get active connections
-      const activeRes = await client.query(`
-      SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'
-    `);
-     pgActiveConnections.set({ db: dbName }, parseInt(activeRes.rows[0].count, 10));
-
-      // Get size of current database
-      const sizeRes = await client.query(`
-      SELECT pg_database.datname, pg_database_size(pg_database.datname) AS size
-      FROM pg_database WHERE datistemplate = false
-    `);
-      sizeRes.rows.forEach(row => {
-        pgDatabaseSize.set(
-          {
-            db: dbName,
-            database: row.datname
-          },
-          parseInt(row.size, 10)
-        );
-      });
-
-      await collectCustomMetrics(client, dbName);
-
-    } catch (err) {
-      console.error('[COLLECT] Failed to gather metrics:', err.message);
-    } finally {
-      client.release();
-    }
-  }
+  await Promise.all(
+    pools.map(scrapeDatabase)
+  );
 }
 
 // --- /metrics route ---

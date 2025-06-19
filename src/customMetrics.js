@@ -96,6 +96,11 @@ async function collectCustomMetrics(client, dbName) {
             row
           );
         }
+        if (process.env.DEBUG_LOGGING === 'true') {
+          console.log(
+            `[CUSTOM] Set ${definition.name} ${JSON.stringify(labels)} = ${value} (from "${valueFieldUsed}")`
+          );
+        }
       });
     } catch (err) {
       console.error(`[CUSTOM] Failed to run "${definition.name}":`, err.message);
