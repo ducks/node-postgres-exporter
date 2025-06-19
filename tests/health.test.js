@@ -4,21 +4,21 @@ import request from 'supertest';
 import { pool } from '../src/db.js';
 import registerHealthEndpoints from '../src/health.js';
 
-describe('Health Endpoints', () => {
+describe('Health Endpoints', { tags: ['integration'] }, () => {
   const app = express();
   registerHealthEndpoints(app, pool);
 
-  it('healthz returns 200', async () => {
+  it('healthz returns 200', { tags: ['integration'] }, async () => {
     const res = await request(app).get('/healthz');
     expect(res.statusCode).toBe(200);
   });
 
-  it('livez returns 200', async () => {
+  it('livez returns 200', { tags: ['integration'] }, async () => {
     const res = await request(app).get('/livez');
     expect(res.statusCode).toBe(200);
   });
 
-  it('readyz returns 200 if DB available', async () => {
+  it('readyz returns 200 if DB available', { tags: ['integration'] }, async () => {
     const res = await request(app).get('/readyz');
     expect([200, 500]).toContain(res.statusCode);
   });
