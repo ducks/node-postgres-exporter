@@ -102,14 +102,25 @@ included for testing.
 
 ### High Priority
 
-1. Per-Database Failure Isolation
+1. Secure Database Credenetial Management
+
+- Replace plaintext database credentials in `databases.json` with external
+  secret management integration.
+- Options include: Kubernetes Secrets, cloud provider secret stores,
+  environment variable injection, or HashiCorp Vault.
+- Prevent credential exposure via configuration files, CI logs, or image builds.
+- Enables safe deployment of the exporter in production environments.
+
+2. Per-Database Failure Isolation
 
 - Prevent single database failure from blocking full scrape response.
 
-2. Expanded Metric Type Support
+3. Expanded Metric Type Support
 
 - Add support for Prometheus Histogram and Summary types.
 - Enable richer metrics for latency, distributions, and advanced analysis.
+
+
 
 ### Medium Priority
 
