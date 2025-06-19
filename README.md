@@ -101,14 +101,16 @@ scrape_configs:
 
 ## Metrics Exposed
 
-| Metric                                   | Type   | Description                                       |
-|------------------------------------------|--------|---------------------------------------------------|
-| `pg_active_connections`                  | Gauge  | Number of active PostgreSQL connections           |
-| `pg_database_size_bytes{database="..."}` | Gauge  | Size of each database in bytes                    |
-| `exporter_up`                            | Gauge  | Always `1` if exporter is running (self-health)   |
-| `exporter_errors_total`                  | Counter| Total number of scrape errors encountered         |
-| `exporter_scrape_duration_seconds`       | Gauge  | Duration of each scrape in seconds                |
-| _Custom metrics_                         | Gauge  | Defined via `queries.json`, dynamically loaded    |
+| Metric                                   | Type    | Description                                       |
+|------------------------------------------|---------|---------------------------------------------------|
+| `pg_active_connections`                  | Gauge   | Number of active PostgreSQL connections           |
+| `pg_database_size_bytes{database="..."}` | Gauge   | Size of each database in bytes                    |
+| `exporter_up`                            | Gauge   | Always `1` if exporter is running (self-health)   |
+| `exporter_errors_total`                  | Counter | Total number of scrape errors encountered         |
+| `exporter_scrape_duration_seconds`       | Gauge   | Duration of full scrape across all databases      |
+| `pg_scrape_duration_seconds{db="..."}`   | Gauge   | Scrape duration for individual databases          |
+| `pg_scrape_success{db="..."}`            | Gauge   | Scrape success per database (1=success, 0=failure)|
+| _Custom metrics_                         | Gauge / Counter | Defined via `queries.json`, dynamically loaded |
 
 ## Endpoints
 

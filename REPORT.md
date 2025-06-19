@@ -57,6 +57,10 @@ included for testing.
   database scrape failure currently causes full scrape failure. No partial
   scrape reporting yet.
 
+- **Per-database introspection added:** Scrape success and scrape duration are
+  reported per database as labeled metrics. This allows partial failure
+  visibility even when global scrape fails.
+
 - **Cardinality risk:** Query design fully controls metric cardinality.
   Queries returning unbounded distinct label values could introduce
   high-cardinality risk in Prometheus storage.
@@ -85,8 +89,11 @@ included for testing.
 4. Exporter available at `http://localhost:9187/metrics`
 5. Prometheus available at `http://localhost:9090`
 6. Test queries
+  - `exporter_scrape_duration_seconds`
   - `pg_active_connections`
   - `pg_database_size_bytes`
+  - `pg_scrape_duration_seconds`
+  - `pg_scrape_success`
   - `disc_golf_total_holes`
   - `disc_golf_course_count_by_location`
   - `disc_golf_holes_by_location`
@@ -97,8 +104,6 @@ included for testing.
 
 1. Per-Database Failure Isolation
 
-- Allow partial scrape success if individual database scrapes fail.
-- Report scrape failures per database as distinct metrics.
 - Prevent single database failure from blocking full scrape response.
 
 2. Expanded Metric Type Support
