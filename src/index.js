@@ -17,7 +17,6 @@ const {
 
 const {
   loadCustomMetrics,
-  collectCustomMetrics
 } = require('./customMetrics');
 
 const createAuthMiddleware = require('./auth');
@@ -27,10 +26,6 @@ const authMiddleware = createAuthMiddleware(process.env.EXPORTER_API_KEY);
 const app = express();
 
 const rateLimit = require('express-rate-limit');
-
-// --- Registering Health Endpoints ---
-const registerHealthEndpoints = require('./health');
-registerHealthEndpoints(app, pools);
 
 // --- Config ---
 const PORT = process.env.PORT || 9187;
@@ -93,6 +88,10 @@ app.get('/metrics', authMiddleware, metricsLimiter, async (_, res) => {
     res.status(500).send('# Exporter output failure\n');
   }
 });
+
+// --- Registering Health Endpoints ---
+const registerHealthEndpoints = require('./health');
+registerHealthEndpoints(app, pools);
 
 // --- Start Server ---
 app.listen(PORT, () => {

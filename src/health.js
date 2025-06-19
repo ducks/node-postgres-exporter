@@ -1,3 +1,9 @@
+const { customMetrics } = require("./customMetrics");
+
+const createAuthMiddleware = require('./auth');
+
+const authMiddleware = createAuthMiddleware(process.env.EXPORTER_API_KEY);
+
 function registerHealthEndpoints(app, pools) {
   app.get('/healthz', (_, res) => res.status(200).send('OK'));
   app.get('/livez', (_, res) => res.status(200).send('OK'));
@@ -14,6 +20,12 @@ function registerHealthEndpoints(app, pools) {
     }
     res.status(200).send('OK');
   });
+  app.get('/configz', authMiddleware, (_, res) => {
+  res.json({
+    databases: pools.map(p => p.name),
+    customMetrics: customMetrics.map(m => m.definition),
+  });
+});
 }
 
 module.exports = registerHealthEndpoints;

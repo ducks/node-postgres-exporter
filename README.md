@@ -120,6 +120,7 @@ scrape_configs:
 | `/healthz`   | GET    | ❌ None         | Liveness probe for health checks      |
 | `/livez`     | GET    | ❌ None         | Liveness probe; returns `200 OK` if process is alive     |
 | `/readyz`    | GET    | ❌ None         | Readiness probe. Returns `200 OK` if the database connection is successful. |
+| `/configz`   | GET    | ✅ Bearer Token | Returns current loaded database and metrics config |
 
 ### Authorization
 
@@ -158,12 +159,12 @@ To run full tests locally:
 - [x] Gracefully shut down DB pools on SIGINT/SIGTERM
 - [x] Support multiple database connections
 - [x] Add basic GitHub Actions CI integration
+- [x] Add `/configz` endpoint to expose active config for debugging
 
 Future enhancements:
 
 - [ ] Hot-reload `queries.json` without restart
 - [ ] Support token auth via query param (e.g., `?token=...`)
-- [ ] Add `/configz` endpoint to expose active config for debugging
 - [ ] Publish prebuilt Docker image to GitHub Container Registry
 - [ ] Support large `.sql` file queries
 - [ ] Expand metric type support beyond Gauge/Counter
