@@ -37,6 +37,12 @@ included for testing.
 - Injected db label automatically to simplify user-facing configuration and
   support clean multi-database separation.
 
+- Added runtime introspection endpoint (`/configz`) to expose loaded config
+  state for operators.
+
+- Structured development using isolated feature branches and atomic commits,
+  preserving full traceability of design decisions and implementation evolution.
+
 ## Obstacles Encountered
 - Never used Prometheus before
 - Initial confusion around metric registration order in `prom-client`
@@ -56,10 +62,6 @@ included for testing.
 - **Scraping model:** Scrapes databases in parallel, but any individual
   database scrape failure currently causes full scrape failure. No partial
   scrape reporting yet.
-
-- **Per-database introspection added:** Scrape success and scrape duration are
-  reported per database as labeled metrics. This allows partial failure
-  visibility even when global scrape fails.
 
 - **Cardinality risk:** Query design fully controls metric cardinality.
   Queries returning unbounded distinct label values could introduce

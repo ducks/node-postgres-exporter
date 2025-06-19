@@ -109,6 +109,7 @@ async function collectCustomMetrics(client, dbName) {
 }
 
 module.exports = {
+  customMetrics,
   loadCustomMetrics,
   collectCustomMetrics,
 };
