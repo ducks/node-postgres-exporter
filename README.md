@@ -1,9 +1,11 @@
-# postgres-exporter
+# node-postgres-exporter
 
 A lightweight, configurable Prometheus exporter for PostgreSQL written in Node.js.
 
 - Collects core PostgreSQL metrics (connections, database size)
+- Collects metrics about itself (scrape duration, error count)
 - Supports dynamic custom metrics via `queries.json`
+- Supports multiple database connections via `databases.json`
 - Secured with API key using Bearer auth
 - Fully Docker-compatible and cloud-ready
 - Fast to set up, easy to extend
@@ -18,19 +20,40 @@ A lightweight, configurable Prometheus exporter for PostgreSQL written in Node.j
 git clone git@github.com/ducks/node-postgres-exporter.git
 cd node-postgres-exporter
 cp .env.example .env
+cp databases.json.example databases.json
 ```
 
 Edit `.env` to match your environment:
 
 ```
-DB_HOST=your-db-host
-DB_PORT=5432
-DB_USER=readonly_user
-DB_PASS=readonly_pass
-DB_NAME=your_database
-
 EXPORTER_PORT=9187
-EXPORTER_API_KEY=your_secret_key
+EXPORTER_API_KEY=Defacing-Tingle-Caucus8-Refueling
+QUERIES_FILE=/app/queries.json
+DBS_CONFIG_FILE=/app/databases.json
+```
+
+Edit `databases.json` to match your environment:
+```
+{
+  "databases": [
+    {
+      "name": "db1",
+      "host": "postgres1",
+      "port": 5432,
+      "user": "postgres",
+      "pass": "postgres",
+      "database": "db1"
+    },
+    {
+      "name": "db2",
+      "host": "postgres2",
+      "port": 5432,
+      "user": "postgres",
+      "pass": "postgres",
+      "database": "db2"
+    }
+  ]
+}
 ```
 
 ### 2. Define your metrics
@@ -56,6 +79,7 @@ docker build -t pg-exporter .
 docker run -p 9187:9187 \
   --env-file .env \
   -v $(pwd)/queries.json:/app/queries.json \
+  -v $(pwd)/databases.json:/app/databases.json \
   pg-exporter
 ```
 
@@ -106,29 +130,41 @@ Authorization: Bearer your_secret_key
 
 ## Configuration
 
-| Variable           | Description                            |
-| ------------------ | -------------------------------------- |
-| `DB_HOST`          | PostgreSQL host                        |
-| `DB_PORT`          | PostgreSQL port                        |
-| `DB_USER`          | PostgreSQL user                        |
-| `DB_PASS`          | PostgreSQL password                    |
-| `DB_NAME`          | PostgreSQL database                    |
-| `EXPORTER_PORT`    | HTTP server port (default `9187`)      |
-| `EXPORTER_API_KEY` | Bearer token for `/metrics`            |
-| `QUERIES_FILE`     | Optional custom path to `queries.json` |
+| Variable            | Description                            |
+|---------------------|----------------------------------------|
+| `EXPORTER_PORT`     | HTTP server port (default `9187`)      |
+| `EXPORTER_API_KEY`  | Bearer token for `/metrics` access     |
+| `QUERIES_FILE`      | Path to `queries.json` file            |
+| `DBS_CONFIG_FILE`   | Path to `databases.json` file          |
 
-## TODOs/Improvement Ideas
-- [x] Rate-limit `/metrics` endpoint to protect against abuse or scraping loops
-- [x] Add a test metric (like `exporter_up`) to confirm exporter is functioning
+## Testing
+
+Unit tests are written using Vitest.
+
+Unit tests run on `main` branch push/PR. Integration tests requiring live
+databases are automatically skipped in CI environments.
+
+To run full tests locally:
+
+`npm test`
+
+## TODOs / Improvement Ideas
+
+- [x] Rate-limit `/metrics` to protect against abuse or scraping loops
+- [x] Add exporter self-health metrics (up, scrape duration, error count)
 - [x] Add unit tests for query loading and metric registration
-- [x] Gracefully shut down and close DB pool on SIGINT/SIGTERM
+- [x] Gracefully shut down DB pools on SIGINT/SIGTERM
 - [x] Support multiple database connections
+- [x] Add basic GitHub Actions CI integration
 
-- [ ] Optional: Reload `queries.json` periodically without restart (hot reload)
-- [ ] Optional: Support token auth via query param (e.g., `?token=...`)
-- [ ] Add `/configz` endpoint to return current query config (debugging/dev)
-- [ ] Publish prebuilt Docker image to GitHub Container Registry or Docker Hub
-- [ ] Allow loading `.sql` files instead of inline queries (for large SQL)
+Future enhancements:
+
+- [ ] Hot-reload `queries.json` without restart
+- [ ] Support token auth via query param (e.g., `?token=...`)
+- [ ] Add `/configz` endpoint to expose active config for debugging
+- [ ] Publish prebuilt Docker image to GitHub Container Registry
+- [ ] Support large `.sql` file queries
+- [ ] Expand metric type support beyond Gauge/Counter
 
 ## License
 

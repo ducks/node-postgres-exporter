@@ -4,6 +4,7 @@
 
 This project implements a PostgreSQL Prometheus exporter, written in Node.js,
 with a focus on configurability, robustness, and multi-database scalability.
+
 The exporter collects both core PostgreSQL metrics and dynamic custom metrics
 defined via JSON configuration. A fully runnable Docker Compose setup is
 included for testing.
@@ -21,6 +22,7 @@ included for testing.
 - Added basic rate limiting to protect against excessive scraping
 - Fully containerized with Docker Compose, including two Postgres DBs for demo
 - Developed initial automated tests (auth, config loading, metric loading)
+- Integrated CI pipeline using Github Actions
 
 ## Technical Decisions
 - Chose Node.js for rapid iteration, strong ecosystem libraries (prom-client,
@@ -29,30 +31,51 @@ included for testing.
 - Chose JSON configuration files for simplicity, explicitness, and easy testing
   without code changes.
 
-- Modularized scraper design to fully separate database handling, metric
-  registration, custom queries, and health endpoints.
+- Modular architecture to fully separate database management, metric
+  registration, query execution, and HTTP routing
 
 - Injected db label automatically to simplify user-facing configuration and
   support clean multi-database separation.
 
 ## Obstacles Encountered
-- initial confusion around metric registration order in prom-client
-- error handling around double `client.release()` and scraping error
+- Never used Prometheus before
+- Initial confusion around metric registration order in `prom-client`
+- Handling client connection release errors during scrape failures (double
+  release)
+- Isolating scrape failure handling to ensure exporter stability
 
 ## Limitations, Tradeoffs, & Performance Considerations
 
-- Only gauge metric type supported currently (no counters, histograms, summaries)
-- `queries.json` still assumes fairly simple SQL queries returning one numeric
-  field + labels
-- Scrape loop is synchronous across databases; asynchronous parallelization
-  would improve scalability with higher DB counts.
-- Error handling for partial DB failures is simple: any DB failure currently
-  causes full scrape failure.
-- Custom queries must be written carefully to avoid long-running SQL that could
-  delay scrapes or trigger timeouts.
-- Metric cardinality is controlled by query design — queries returning
-  unbounded distinct label values could introduce high cardinality risk in
-  Prometheus storage.
+- **Metric types:** Only `Gauge` and `Counter` supported currently (no
+  `Histogram` or `Summary` types yet).
+
+- **Query design:** `queries.json` assumes queries return one numeric value
+  and any additional label fields. Complex queries may require explicit
+  `valueField` support.
+
+- **Scraping model:** Scrapes databases in parallel, but any individual
+  database scrape failure currently causes full scrape failure. No partial
+  scrape reporting yet.
+
+- **Cardinality risk:** Query design fully controls metric cardinality.
+  Queries returning unbounded distinct label values could introduce
+  high-cardinality risk in Prometheus storage.
+
+- **Long-running queries:** Query performance directly affects scrape
+  duration. Poorly optimized SQL queries can delay scrapes or cause failures
+  under Prometheus timeouts.
+
+- **Connection pool sizing:** Connection pool size (`max: 5` per database) is
+  conservative to balance concurrency and resource usage. Larger database sets
+  may require tuning.
+
+- **Concurrency control:** No scrape mutex currently; overlapping scrapes may
+  occur if Prometheus issues concurrent scrape requests.
+
+- **Internal timeouts:** Exporter does not enforce scrape-level timeouts
+  internally; relies on Prometheus scrape timeout configuration to enforce
+  scrape deadlines.
+
 
 ## Testing Instructions
 
