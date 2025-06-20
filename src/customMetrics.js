@@ -5,8 +5,8 @@ const { Counter, Gauge } = require('prom-client');
 
 const customMetrics = [];
 
-function loadCustomMetrics(register) {
-  const queriesFilePath = process.env.QUERIES_FILE;
+function loadCustomMetrics(register, filePathOverride = null) {
+  const queriesFilePath = filePathOverride || process.env.QUERIES_FILE;
 
   if (!queriesFilePath) {
     console.warn('[WARN] No queries file specified; no custom metrics loaded');

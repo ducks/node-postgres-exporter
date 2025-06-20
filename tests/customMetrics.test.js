@@ -37,6 +37,7 @@ describe('Custom Metrics Loader', () => {
     loadCustomMetrics(register, tempFile);
 
     const metrics = register.getMetricsAsArray().map(m => m.name);
+    console.log(metrics);
     expect(metrics).toContain('test_metric');
   });
 
