@@ -1,6 +1,6 @@
 {
   "name": "postgres-exporter",
-  "version": "20250609",
+  "version": "20250620",
   "description": "Custom Prometheus exporter for PostgreSQL metrics",
   "main": "src/index.js",
   "scripts": {
