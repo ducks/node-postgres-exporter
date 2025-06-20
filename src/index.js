@@ -13,6 +13,7 @@ const {
   register,
   exporterErrors,
   scrapeDuration,
+  scrapeSuccess
 } = require('./metrics');
 
 const {
@@ -50,9 +51,20 @@ loadCustomMetrics(register);
 
 // --- Metric Collector ---
 async function collectMetrics() {
-  await Promise.all(
-    pools.map(scrapeDatabase)
-  );
+  const scrapePromises = pools.map(({ name, pool }) => scrapeDatabase(name, pool));
+
+  const scrapeResults = await Promise.allSettled(scrapePromises);
+
+  scrapeResults.forEach((result, idx) => {
+    const dbName = pools[idx].name;
+
+    if (result.status === 'fulfilled') {
+      scrapeSuccess.labels(dbName).set(1);
+    } else {
+      exporterErrors.inc();
+      scrapeSuccess.labels(dbName).set(0);
+    }
+  });
 }
 
 // --- /metrics route ---
