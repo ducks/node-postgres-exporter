@@ -28,3 +28,6 @@ jobs:
 
       - name: Run tests
         run: npx vitest --passWithNoTests
+
+      - name: Run lint
+        run: npm run lint

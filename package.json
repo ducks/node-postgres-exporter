@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "vitest"
+    "test": "npx vitest --passWithNoTests",
+    "lint": "eslint ."
   },
   "keywords": [
     "prometheus",
@@ -24,6 +25,9 @@
     "prom-client": "^14.1.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.29.0",
+    "eslint": "^9.29.0",
+    "globals": "^16.2.0",
     "nodemon": "^3.0.3",
     "supertest": "^7.1.1",
     "vitest": "^3.2.4"
