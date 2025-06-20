@@ -124,6 +124,7 @@ established libraries:
   - `disc_golf_total_holes`
   - `disc_golf_course_count_by_location`
   - `disc_golf_holes_by_location`
+7. Bring one db down to test per db scraping: `docker compose stop postgres1`
 
 ## Future Work
 
