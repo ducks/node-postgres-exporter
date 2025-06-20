@@ -101,9 +101,6 @@ established libraries:
   conservative to balance concurrency and resource usage. Larger database sets
   may require tuning.
 
-- **Concurrency control:** No scrape mutex currently; overlapping scrapes may
-  occur if Prometheus issues concurrent scrape requests.
-
 - **Internal timeouts:** Exporter does not enforce scrape-level timeouts
   internally; relies on Prometheus scrape timeout configuration to enforce
   scrape deadlines.

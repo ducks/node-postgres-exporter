@@ -110,6 +110,7 @@ scrape_configs:
 | `exporter_up`                            | Gauge   | Always `1` if exporter process is running         |
 | `exporter_errors_total`                  | Counter | Total number of scrape errors encountered         |
 | `exporter_scrape_duration_seconds`       | Gauge   | Total scrape duration for entire exporter         |
+| `exporter_scrape_lockouts_total`        | Counter | Total number of scrape requests rejected due to concurrent scrape lock |
 | _Custom metrics_                         | Various | Defined via `queries.json`, dynamically loaded    |
 
 ## Endpoints
