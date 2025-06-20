@@ -39,7 +39,7 @@ loadDatabaseConfigs(process.env.DBS_CONFIG_FILE);
 // --- Startup Logging ---
 console.log(`Exporter starting on port ${PORT}`);
 console.log(`Auth enabled: ${!!process.env.EXPORTER_API_KEY}`);
-console.log(`Using queries file: ${process.env.QUERIES_FILE || 'queries.json'}`);
+console.log(`Using queries file: ${process.env.QUERIES_FILE}`);
 
 // --- Rate limit config ---
 const metricsLimiter = rateLimit({
