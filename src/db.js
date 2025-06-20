@@ -5,6 +5,7 @@ const fs = require('fs');
 const pools = [];
 
 const {
+  exporterErrors,
   pgActiveConnections,
   pgDatabaseSize,
   scrapeSuccess,
@@ -47,6 +48,12 @@ function loadDatabaseConfigs(configFilePath) {
       idleTimeoutMillis: 10000,
     });
 
+    pool.on('error', (err) => {
+      console.error(`[POOL ERROR] DB ${db.name}: ${err.message}`);
+      exporterErrors.inc();
+      scrapeSuccess.labels(db.name).set(0);
+    });
+
     pools.push({ name: db.name, pool });
   });
 
@@ -68,8 +75,9 @@ async function shutdown() {
   process.exit(0);
 }
 
-async function scrapeDatabase({ name, pool }) {
+async function scrapeDatabase(name, pool) {
   const client = await pool.connect();
+  const start = Date.now();
 
   try {
     // Core metrics:
@@ -87,26 +95,15 @@ async function scrapeDatabase({ name, pool }) {
       pgDatabaseSize.set({ database: row.datname, db: name }, parseInt(row.size, 10));
     });
 
-    const start = Date.now();
+    await collectCustomMetrics(client, name);
 
-    try {
-      await collectCustomMetrics(client, name);
-
-      scrapeSuccess.set({ db: name }, 1);
-    } catch (err) {
-      console.error(`[SCRAPE] Error scraping db ${name}:`, err);
-
-      scrapeSuccess.set({ db: name }, 0);
-    }
+  } catch (err) {
+    throw { name, error: err.message };
+  } finally {
+    client.release();
 
     const duration = (Date.now() - start) / 1000;
     perDbScrapeDuration.set({ db: name }, duration);
-
-  } catch (err) {
-    console.error(`[SCRAPE] Failed for DB ${name}:`, err.message);
-    throw err;  // Optional: fail fast for this DB scrape
-  } finally {
-    client.release();
   }
 }
 

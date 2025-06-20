@@ -23,6 +23,10 @@ included for testing.
 - Fully containerized with Docker Compose, including two Postgres DBs for demo
 - Developed initial automated tests (auth, config loading, metric loading)
 - Integrated CI pipeline using Github Actions
+- Added full fault isolation with per-database scrape success tracking via
+  `pg_scrape_success` and `pg_scrape_duration_seconds`.
+- Added internal pool-level error handling to prevent process crashes on
+  unexpected Postgres disconnects.
 
 ## Technical Decisions
 - Chose Node.js for rapid iteration, strong ecosystem libraries (prom-client,
@@ -85,10 +89,6 @@ established libraries:
   and any additional label fields. Complex queries may require explicit
   `valueField` support.
 
-- **Scraping model:** Scrapes databases in parallel, but any individual
-  database scrape failure currently causes full scrape failure. No partial
-  scrape reporting yet.
-
 - **Cardinality risk:** Query design fully controls metric cardinality.
   Queries returning unbounded distinct label values could introduce
   high-cardinality risk in Prometheus storage.
@@ -124,6 +124,7 @@ established libraries:
   - `disc_golf_total_holes`
   - `disc_golf_course_count_by_location`
   - `disc_golf_holes_by_location`
+7. Bring one db down to test per db scraping: `docker compose stop postgres1`
 
 ## Future Work
 
@@ -145,11 +146,7 @@ established libraries:
 - Serve cached data to Prometheus to tolerate transient network issues
 - Prevents gaps in Prometheus data caused by brief network disruptions
 
-3. Per-Database Failure Isolation
-
-- Prevent single database failure from blocking full scrape response.
-
-4. Expanded Metric Type Support
+3. Expanded Metric Type Support
 
 - Add support for Prometheus Histogram and Summary types.
 - Enable richer metrics for latency, distributions, and advanced analysis.
