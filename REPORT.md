@@ -17,7 +17,7 @@ included for testing.
 - Included core Postgres metrics (active connections, db size)
 - Included metrics about exporter (scrape duration, error count)
 - Implemented multi-database support via `databases.json` config file
-- Refactored to modular, maintainable code structure
+- Architected clean, modular code structure for long-term maintainability
 - Implemented graceful shutdown to cleanly close all database pools
 - Added basic rate limiting to protect against excessive scraping
 - Fully containerized with Docker Compose, including two Postgres DBs for demo
@@ -74,7 +74,7 @@ established libraries:
   pools before exiting.
 
 ## Obstacles Encountered
-- Never used Prometheus before
+- First time implementing Prometheus exporter
 - Initial confusion around metric registration order in `prom-client`
 - Handling client connection release errors during scrape failures (double
   release)
@@ -105,7 +105,7 @@ established libraries:
   internally; relies on Prometheus scrape timeout configuration to enforce
   scrape deadlines.
 
-## Testing Instructions
+## Full Local Testing Instructions (Docker Compose)
 
 1. clone repo - git@github.com:ducks/node-postgres-exporter.git
 2. change to example dir - `cd example`
