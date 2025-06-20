@@ -13,7 +13,8 @@ const {
   register,
   exporterErrors,
   scrapeDuration,
-  scrapeSuccess
+  scrapeSuccess,
+  scrapeLockouts,
 } = require('./metrics');
 
 const {
@@ -30,6 +31,7 @@ const rateLimit = require('express-rate-limit');
 
 // --- Config ---
 const PORT = process.env.PORT || 9187;
+let isScraping = false;
 
 // --- DB config
 loadDatabaseConfigs(process.env.DBS_CONFIG_FILE);
@@ -69,6 +71,13 @@ async function collectMetrics() {
 
 // --- /metrics route ---
 app.get('/metrics', authMiddleware, metricsLimiter, async (_, res) => {
+  if (isScraping) {
+    scrapeLockouts.inc();
+    return res.status(429).send('# Scrape already in progress\n');
+  }
+
+  isScraping = true;
+
   const start = Date.now();
 
   let scrapeFailed = false;
@@ -98,6 +107,8 @@ app.get('/metrics', authMiddleware, metricsLimiter, async (_, res) => {
     // This very rarely fails (prom-client error)
     console.error('[ERROR] Failed to generate metrics output:', err);
     res.status(500).send('# Exporter output failure\n');
+  } finally {
+    isScraping = false;
   }
 });
 

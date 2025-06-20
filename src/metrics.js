@@ -53,6 +53,12 @@ const perDbScrapeDuration = new client.Gauge({
 });
 register.registerMetric(perDbScrapeDuration);
 
+const scrapeLockouts = new client.Counter({
+  name: 'exporter_scrape_lockouts_total',
+  help: 'Number of scrape requests rejected due to concurrency lock',
+});
+register.registerMetric(scrapeLockouts);
+
 // Export everything we need
 module.exports = {
   client,
