@@ -1,5 +1,4 @@
 const fs = require('fs');
-const path = require('path');
 
 const { Counter, Gauge } = require('prom-client');
 
