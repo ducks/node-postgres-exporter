@@ -43,6 +43,32 @@ included for testing.
 - Structured development using isolated feature branches and atomic commits,
   preserving full traceability of design decisions and implementation evolution.
 
+## Specific Implementation Details
+
+The exporter is implemented as a simple modular Node.js service using
+established libraries:
+
+- **Express** powers the HTTP server, exposing the `/metrics` and health
+  endpoints.
+- **pg (node-postgres)** manages PostgreSQL database connections via connection
+  pools. Each configured database is assigned its own independent pool.
+- **prom-client** handles Prometheus metrics registration, management, and
+  exposition. It supports both core exporter metrics and dynamically loaded
+  custom metrics.
+- **express-rate-limit** provides simple request limiting on the `/metrics`
+  endpoint to prevent abuse or tight scrape loops.
+- The service loads configuration at startup from JSON files (`databases.json`
+  and `queries.json`), validates, registers metrics, and exposes fully
+  introspectable config state via `/configz`.
+- The scrape cycle for Prometheus involves calling an internal `collectMetrics()`
+  function that:
+    - Iterates over all configured databases.
+    - Queries built-in Postgres stats (connections, database size).
+    - Runs all custom queries defined in `queries.json`.
+    - Updates the corresponding Prometheus metrics accordingly.
+- Graceful shutdown logic traps SIGINT/SIGTERM and cleanly closes all database
+  pools before exiting.
+
 ## Obstacles Encountered
 - Never used Prometheus before
 - Initial confusion around metric registration order in `prom-client`
@@ -82,7 +108,6 @@ included for testing.
   internally; relies on Prometheus scrape timeout configuration to enforce
   scrape deadlines.
 
-
 ## Testing Instructions
 
 1. clone repo - git@github.com:ducks/node-postgres-exporter.git
@@ -104,7 +129,7 @@ included for testing.
 
 ### High Priority
 
-1. Secure Database Credenetial Management
+1. Secure Database Credential Management
 
 - Replace plaintext database credentials in `databases.json` with external
   secret management integration.
@@ -128,8 +153,6 @@ included for testing.
 
 - Add support for Prometheus Histogram and Summary types.
 - Enable richer metrics for latency, distributions, and advanced analysis.
-
-
 
 ### Medium Priority
 
