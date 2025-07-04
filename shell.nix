@@ -5,6 +5,8 @@ pkgs.mkShell {
 
   buildInputs = [
     pkgs.nodejs       # Stable Node.js with npm bundled
+    pkgs.docker
+    pkgs.docker-compose
   ];
 
   shellHook = ''
